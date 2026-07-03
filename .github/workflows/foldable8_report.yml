@@ -8,10 +8,7 @@ on:
       mode:
         description: "report(20시 취합) 또는 remind(19시 리마인드)"
         default: "report"
-  schedule:
-    - cron: "0 10 * * *"    # UTC 10:00 = KST 19:00 취합 안내 공지
-    - cron: "10 11 * * *"   # UTC 11:10 = KST 20:10 마감 집계/공지/메일
- 
+  
 jobs:
   run:
     runs-on: ubuntu-latest
