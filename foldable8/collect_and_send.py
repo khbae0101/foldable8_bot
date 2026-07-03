@@ -90,13 +90,24 @@ def send_document(chat_id, path, caption=""):
                       files={"document": f}, timeout=60)
  
  
-def send_mail(subject, body, attachments):
+def send_mail(subject, body, attachments, inline_image=None):
     user = os.environ["GMAIL_USER"]
     pw = os.environ["GMAIL_APP_PASSWORD"]
     to = [a.strip() for a in os.environ["MAIL_TO"].split(",")]
-    msg = MIMEMultipart()
+    msg = MIMEMultipart("related")
     msg["From"], msg["To"], msg["Subject"] = user, ", ".join(to), subject
-    msg.attach(MIMEText(body, "plain", "utf-8"))
+    html = "<div style='font-family:sans-serif;white-space:pre-line'>" \
+           + body + "</div>"
+    if inline_image:
+        html += "<br><img src='cid:report_img' style='max-width:100%'>"
+    msg.attach(MIMEText(html, "html", "utf-8"))
+    if inline_image:
+        from email.mime.image import MIMEImage
+        img = MIMEImage(Path(inline_image).read_bytes())
+        img.add_header("Content-ID", "<report_img>")
+        img.add_header("Content-Disposition", "inline",
+                       filename=Path(inline_image).name)
+        msg.attach(img)
     for p in attachments:
         part = MIMEBase("application", "octet-stream")
         part.set_payload(Path(p).read_bytes())
@@ -159,7 +170,7 @@ def main(mode="report"):
     # 5) 메일 발송 (CRM 포함 엑셀)
     body = cap + "\n\n상세 내역은 첨부 엑셀(raw 시트에 CRM 현황 포함) 참고 바랍니다."
     send_mail(f"[{stores_cfg['지사명']}] {stores_cfg['모델명']} 예약현황 ({now.month}/{now.day})",
-              body, [out_xlsx])
+              body, [out_xlsx], inline_image=out_img)
  
     # 6) 당일 마감치/보고 저장 → 익일 전일마감·이월용
     close = {s["조직"]: s["예약누적"] for s in agg["매장"] if s["데이터있음"]}
