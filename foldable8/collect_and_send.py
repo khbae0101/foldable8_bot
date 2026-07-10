@@ -34,7 +34,7 @@ sys.path.insert(0, str(BASE))
  
 from report_parser import load_stores, parse_all
 from build_excel import aggregate, build_workbook
-from render_image import render, build_rows, build_footnote
+from render_image import render, build_rows, build_footnote, render_persons_split
  
 KST = timezone(timedelta(hours=9))
 TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
@@ -156,6 +156,11 @@ def main(mode="report"):
     out_img = BASE / f"예약현황_{ymd}.png"
     out_xlsx = BASE / f"{stores_cfg['지사명']}_{stores_cfg['모델명']}_예약현황_{ymd}.xlsx"
     render(build_rows(agg), title, date_str, out_img, footnote=build_footnote(agg))
+    person_imgs = []
+    if agg.get("개인"):
+        person_imgs = render_persons_split(
+            agg, f"{stores_cfg['지사명']} {stores_cfg['모델명']}",
+            date_str, BASE, f"예약현황_{ymd}")
     build_workbook(agg, date_str, out_xlsx, title=title)
  
     # 4) 텔레그램 공지
@@ -166,6 +171,15 @@ def main(mode="report"):
     if missing:
         cap += f"\n※ 미제출: {', '.join(missing)}"
     send_photo(os.environ["ANNOUNCE_CHAT_ID"], out_img, cap)
+    for i, (pth, t) in enumerate(person_imgs):
+        pcap = f"👤 {t} ({date_str})"
+        if i == 0 and agg.get("개인"):
+            pt = agg["개인지사계"]
+            pcap += f"\n총 {len(agg['개인'])}명 / 실적 {pt['실적']:,}건"
+            pm = agg.get("개인미제출매장")
+            if pm:
+                pcap += f"\n※ 개인별 미제출: {', '.join(pm)}"
+        send_photo(os.environ["ANNOUNCE_CHAT_ID"], pth, pcap)
  
     # 5) 메일 발송 (CRM 포함 엑셀)
     body = cap + "\n\n상세 내역은 첨부 엑셀(raw 시트에 CRM 현황 포함) 참고 바랍니다."
