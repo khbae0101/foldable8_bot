@@ -35,6 +35,7 @@ sys.path.insert(0, str(BASE))
 from report_parser import load_stores, parse_all
 from build_excel import aggregate, build_workbook
 from render_image import render, build_rows, build_footnote, render_persons_split
+import insight as insight_mod
 
 KST = timezone(timedelta(hours=9))
 TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
@@ -199,8 +200,19 @@ def main(mode="report"):
                 pcap += f"\n※ 개인별 미제출: {', '.join(pm)}"
         send_photo(os.environ["ANNOUNCE_CHAT_ID"], pth, pcap)
 
+    insight, ins_err = insight_mod.generate(agg, stores_cfg, date_str, DATA, now)
+    if ins_err:
+        print("시사점 생략:", ins_err)
+    if insight:
+        requests.post(f"{API}/sendMessage",
+                      data={"chat_id": os.environ["ANNOUNCE_CHAT_ID"],
+                            "text": insight}, timeout=30)
+
     # 5) 메일 발송 (CRM 포함 엑셀)
-    body = cap + "\n\n상세 내역은 첨부 엑셀(raw 시트에 CRM 현황 포함) 참고 바랍니다."
+    body = cap
+    if insight:
+        body += "\n\n" + insight
+    body += "\n\n상세 내역은 첨부 엑셀(raw 시트에 CRM 현황 포함) 참고 바랍니다."
     mail_imgs = [(out_img, "◼ 매장별 예약현황")]
     mail_imgs += [(p, f"◼ {t}") for p, t in person_imgs]
     send_mail(f"[{stores_cfg['지사명']}] {stores_cfg['모델명']} 예약현황 ({now.month}/{now.day})",
