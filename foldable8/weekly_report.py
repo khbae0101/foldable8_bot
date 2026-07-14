@@ -95,8 +95,8 @@ def combo_chart(days, W=1480, H=440):
         bh = int(ph * x["inc"] / maxb)
         d.rectangle([cx - bw // 2, H - B - bh, cx + bw // 2, H - B],
                     fill=(111, 168, 220))
-        d.text((cx, H - B - bh - 16), str(x["inc"]), font=_F(FB, 21), anchor="mm")
-        d.text((cx, H - B + 22), x["label"], font=_F(FR, 19), anchor="mm")
+        d.text((cx, H - B - bh - 16), str(x["inc"]), font=_F(FB, 21), fill=(30, 30, 30), anchor="mm")
+        d.text((cx, H - B + 22), x["label"], font=_F(FR, 19), fill=(30, 30, 30), anchor="mm")
         cy = H - B - int(ph * x["cum"] / maxc)
         pts.append((cx, cy))
     for a, b in zip(pts, pts[1:]):
@@ -127,8 +127,8 @@ def hist_chart(counts, W=1480, H=400):
         cx = L + int(pw * (i + 0.5) / n)
         bh = int(ph * c / mx)
         d.rectangle([cx - bw // 2, H - B - bh, cx + bw // 2, H - B], fill=col)
-        d.text((cx, H - B - bh - 16), f"{c}명", font=_F(FB, 21), anchor="mm")
-        d.text((cx, H - B + 20), b, font=_F(FR, 19), anchor="mm")
+        d.text((cx, H - B - bh - 16), f"{c}명", font=_F(FB, 21), fill=(30, 30, 30), anchor="mm")
+        d.text((cx, H - B + 20), b, font=_F(FR, 19), fill=(30, 30, 30), anchor="mm")
     return img
 
 
@@ -165,7 +165,7 @@ def _tipbox(d, y, tips):
     d.rounded_rectangle([40, y, W - 40, y + h], radius=12, fill=(255, 251, 235),
                         outline=(220, 200, 140), width=2)
     for i, t in enumerate(tips):
-        d.text((60, y + 30 + i * 38), t, font=_F(FR, 22), anchor="lm")
+        d.text((60, y + 30 + i * 38), t, font=_F(FR, 22), fill=(30, 30, 30), anchor="lm")
     return y + h + 20
 
 
@@ -224,7 +224,7 @@ def render_p1(agg, wk, stores_cfg, out_path, tips):
             d.rectangle([40, ry, 40 + tw, ry + rh], fill=(217, 217, 217))
         for c, v in enumerate(row):
             d.text((40 + c * cw5 + cw5 // 2, ry + rh // 2), v,
-                   font=_F(FB if r == 0 else FR, 22), anchor="mm")
+                   font=_F(FB if r == 0 else FR, 22), fill=(30, 30, 30), anchor="mm")
         d.line([40, ry + rh, 40 + tw, ry + rh], fill=(180, 180, 180), width=2)
     d.rectangle([40, y, 40 + tw, y + rh * len(rows)], outline=(120, 120, 120), width=2)
     y += rh * len(rows) + 40
@@ -242,8 +242,8 @@ def render_p1(agg, wk, stores_cfg, out_path, tips):
         d.text((x0 + half // 2, y + 22), title, font=_F(FB, 21), fill="white", anchor="mm")
         for i, (n, v) in enumerate(data):
             ry = y + 44 + i * 44
-            d.text((x0 + 18, ry + 22), f"{i+1}. {n}", font=_F(FR, 21), anchor="lm")
-            d.text((x0 + half - 18, ry + 22), f"+{v}", font=_F(FB, 21), anchor="rm")
+            d.text((x0 + 18, ry + 22), f"{i+1}. {n}", font=_F(FR, 21), fill=(30, 30, 30), anchor="lm")
+            d.text((x0 + half - 18, ry + 22), f"+{v}", font=_F(FB, 21), fill=(30, 30, 30), anchor="rm")
             d.line([x0, ry + 44, x0 + half, ry + 44], fill=(210, 210, 210), width=1)
         d.rectangle([x0, y, x0 + half, y + 44 + 44 * 5], outline=(150, 150, 150), width=2)
     minitab(40, "TOP 5", wdelta[:5], (56, 118, 29))
@@ -335,7 +335,7 @@ def render_p2(agg, wk, stores_cfg, out_path, tips):
         xacc = 40
         for c, v in enumerate(row):
             d.text((xacc + colw[c] // 2, ry + rh // 2), v,
-                   font=_F(FB if r == 0 else FR, 21), anchor="mm")
+                   font=_F(FB if r == 0 else FR, 21), fill=(30, 30, 30), anchor="mm")
             xacc += colw[c]
         d.line([40, ry + rh, 40 + tw, ry + rh], fill=(200, 200, 200), width=1)
     d.rectangle([40, y, 40 + tw, y + rh * len(rows)], outline=(120, 120, 120), width=2)
@@ -358,7 +358,7 @@ def render_p2(agg, wk, stores_cfg, out_path, tips):
         for n, nm, pv, sv, sh in sorted(dep, key=lambda x: -x[4])[:5]:
             d.text((60, y + 16),
                    f"• {n} : {nm} {pv}건 / 매장 {sv}건 ({sh*100:.0f}%) — 나머지 인원 활동 점검 필요",
-                   font=_F(FR, 22), anchor="lm")
+                   font=_F(FR, 22), fill=(30, 30, 30), anchor="lm")
             y += 44
         y += 24
 
@@ -376,7 +376,7 @@ def render_p2(agg, wk, stores_cfg, out_path, tips):
             line = f"{reg}({len(names)}) : " + ", ".join(names[:8]) + \
                    (f" 외 {len(names)-8}명" if len(names) > 8 else "")
             for ln in _wrap("• " + line, 74):
-                d.text((60, y + 14), ln, font=_F(FR, 21), anchor="lm"); y += 38
+                d.text((60, y + 14), ln, font=_F(FR, 21), fill=(30, 30, 30), anchor="lm"); y += 38
         y += 24
 
     if tips:
