@@ -36,6 +36,7 @@ from report_parser import load_stores, parse_all
 from build_excel import aggregate, build_workbook
 from render_image import render, build_rows, build_footnote, render_persons_split
 import insight as insight_mod
+import weekly_report
 
 KST = timezone(timedelta(hours=9))
 TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
@@ -217,6 +218,20 @@ def main(mode="report"):
     mail_imgs += [(p, f"◼ {t}") for p, t in person_imgs]
     send_mail(f"[{stores_cfg['지사명']}] {stores_cfg['모델명']} 예약현황 ({now.month}/{now.day})",
               body, [out_xlsx], inline_images=mail_imgs)
+
+    # 토요일: 주간 리포트 (텔레그램 2장 + 별도 메일)
+    if now.weekday() == 5:
+        try:
+            wp1, wp2, wcap, wsubj, wbody = weekly_report.generate(
+                agg, stores_cfg, DATA, now, BASE)
+            send_photo(os.environ["ANNOUNCE_CHAT_ID"], wp1, wcap)
+            send_photo(os.environ["ANNOUNCE_CHAT_ID"], wp2,
+                       f"📈 주간 리포트 P.2 — 개인 실적")
+            send_mail(wsubj, wbody, [],
+                      inline_images=[(wp1, None), (wp2, None)])
+            print("주간 리포트 발송 완료")
+        except Exception as e:
+            print("주간 리포트 실패(일일 흐름은 정상):", e)
 
     # 6) 당일 마감치/보고 저장 → 익일 전일마감·이월용
     close = {s["조직"]: s["예약누적"] for s in agg["매장"] if s["데이터있음"]}
