@@ -1,29 +1,29 @@
 # .github/workflows/foldable8_report.yml
 # cron-job.org에서 workflow_dispatch를 호출하는 기존 방식 그대로 사용 가능
 name: 폴더블8 예약현황 취합
- 
+
 on:
   workflow_dispatch:
     inputs:
       mode:
         description: "report(20시 취합) 또는 remind(19시 리마인드)"
         default: "report"
-  
+
 jobs:
   run:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
- 
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
- 
+
       - name: 폰트/패키지 설치
         run: |
           sudo apt-get update -q && sudo apt-get install -y fonts-noto-cjk -q
           pip install requests pillow openpyxl -q
- 
+
       - name: 실행
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -32,6 +32,7 @@ jobs:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           MODE="${{ github.event.inputs.mode }}"
           if [ -z "$MODE" ]; then
@@ -39,7 +40,7 @@ jobs:
             if [ "$HOUR" -lt 20 ]; then MODE=remind; else MODE=report; fi
           fi
           python foldable8/collect_and_send.py "$MODE"
- 
+
       - name: 상태 파일 커밋 (offset, 보고/마감 데이터)
         run: |
           git config user.name "foldable8-bot"
@@ -47,4 +48,3 @@ jobs:
           git add foldable8/data/
           git diff --cached --quiet || git commit -m "폴더블8 데이터 $(TZ=Asia/Seoul date +%m/%d_%H시)"
           git push
- 
