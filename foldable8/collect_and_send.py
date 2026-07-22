@@ -90,12 +90,24 @@ def collect_messages(report_chat_id):
     return msgs
 
 
-def send_photo(chat_id, path, caption=""):
-    with open(path, "rb") as f:
-        r = requests.post(f"{API}/sendPhoto",
-                          data={"chat_id": chat_id, "caption": caption},
-                          files={"photo": f}, timeout=60)
-    r.raise_for_status()
+def send_photo(chat_id, path, caption="", retries=3):
+    """사진 전송. 타임아웃 등 일시 오류 시 15초 간격으로 최대 3회 재시도."""
+    import time
+    last_err = None
+    for attempt in range(1, retries + 1):
+        try:
+            with open(path, "rb") as f:
+                r = requests.post(f"{API}/sendPhoto",
+                                  data={"chat_id": chat_id, "caption": caption},
+                                  files={"photo": f}, timeout=(15, 180))
+            r.raise_for_status()
+            return
+        except Exception as e:
+            last_err = e
+            print(f"send_photo 재시도 {attempt}/{retries}: {e}")
+            if attempt < retries:
+                time.sleep(15)
+    raise last_err
 
 
 def send_document(chat_id, path, caption=""):
@@ -207,7 +219,7 @@ def main(mode="report"):
     if insight:
         requests.post(f"{API}/sendMessage",
                       data={"chat_id": os.environ["ANNOUNCE_CHAT_ID"],
-                            "text": insight}, timeout=30)
+                            "text": insight}, timeout=(15, 60))
 
     # 5) 메일 발송 (CRM 포함 엑셀)
     body = cap
