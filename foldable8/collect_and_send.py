@@ -267,11 +267,8 @@ def main(mode="report"):
         requests.post(f"{API}/sendMessage",
                       data={"chat_id": os.environ["ANNOUNCE_CHAT_ID"],
                             "text": insight}, timeout=(15, 60))
-    # 마무리 독려 멘트는 텔레그램에서 별도 메시지로 맨 마지막에
-    if closing:
-        requests.post(f"{API}/sendMessage",
-                      data={"chat_id": os.environ["ANNOUNCE_CHAT_ID"],
-                            "text": closing}, timeout=(15, 60))
+    # 마무리 독려 멘트는 텔레그램에서 맨 마지막에 발송(토요일 주간 리포트 뒤).
+    # 아래 주간 리포트 블록 이후로 미룸.
  
     # 5) 메일 발송 (CRM 포함 엑셀) — 메일 본문엔 시사점+마무리 멘트 함께
     body = cap
@@ -298,6 +295,12 @@ def main(mode="report"):
             print("주간 리포트 발송 완료")
         except Exception as e:
             print("주간 리포트 실패(일일 흐름은 정상):", e)
+ 
+    # 마무리 독려 멘트 — 텔레그램 맨 마지막 메시지 (주간 리포트보다 뒤)
+    if closing:
+        requests.post(f"{API}/sendMessage",
+                      data={"chat_id": os.environ["ANNOUNCE_CHAT_ID"],
+                            "text": closing}, timeout=(15, 60))
  
     # 6) 당일 마감치/보고 저장 → 익일 전일마감·이월용
     close = {s["조직"]: s["예약누적"] for s in agg["매장"] if s["데이터있음"]}
