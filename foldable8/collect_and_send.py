@@ -259,18 +259,26 @@ def main(mode="report"):
                 pcap += f"\n※ 개인별 미제출: {', '.join(pm)}"
         send_photo(os.environ["ANNOUNCE_CHAT_ID"], pth, pcap)
  
-    insight, ins_err = insight_mod.generate(agg, stores_cfg, date_str, DATA, now)
+    insight, closing, ins_err = insight_mod.generate(
+        agg, stores_cfg, date_str, DATA, now)
     if ins_err:
         print("시사점 생략:", ins_err)
     if insight:
         requests.post(f"{API}/sendMessage",
                       data={"chat_id": os.environ["ANNOUNCE_CHAT_ID"],
                             "text": insight}, timeout=(15, 60))
+    # 마무리 독려 멘트는 텔레그램에서 별도 메시지로 맨 마지막에
+    if closing:
+        requests.post(f"{API}/sendMessage",
+                      data={"chat_id": os.environ["ANNOUNCE_CHAT_ID"],
+                            "text": closing}, timeout=(15, 60))
  
-    # 5) 메일 발송 (CRM 포함 엑셀)
+    # 5) 메일 발송 (CRM 포함 엑셀) — 메일 본문엔 시사점+마무리 멘트 함께
     body = cap
     if insight:
         body += "\n\n" + insight
+    if closing:
+        body += "\n\n─────────────\n" + closing
     body += "\n\n상세 내역은 첨부 엑셀(raw 시트에 CRM 현황 포함) 참고 바랍니다."
     mail_imgs = [(out_img, "◼ 매장별 예약현황")]
     mail_imgs += [(p, f"◼ {t}") for p, t in person_imgs]
