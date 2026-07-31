@@ -139,13 +139,18 @@ def parse_report(text, stores_cfg):
         person_keys = ["목표", "실적", "모행", "특판",
                        "120K", "110K", "2nd", "삼디초", "가전구독",
                        "제휴카드", "라이프", "MIT"]
-        # 모바일 줄바꿈 대응: '-이름 :'만 있고 숫자가 다음 줄로 넘어간 경우 병합
+        # 줄 병합: 이름만 있고 숫자가 다음 줄로 넘어간 경우 대응
+        # (머리기호 -, ㄴ, ·, * 는 있어도 없어도 인식)
+        def _is_head(t):
+            return bool(re.match(r"^[-ㄴ·*•]\s*\S", t)) or \
+                bool(re.match(r"^[가-힣A-Za-z][^:：\d]{0,14}\s*[:：]", t))
+
         merged, buf = [], ""
         for ln in psec.group(1).split("\n"):
             t = ln.strip()
-            if not t:
+            if not t or t.startswith("("):
                 continue
-            if re.match(r"^[-ㄴ]", t):
+            if _is_head(t):
                 if buf:
                     merged.append(buf)
                 buf = t
@@ -154,10 +159,13 @@ def parse_report(text, stores_cfg):
         if buf:
             merged.append(buf)
         for line in merged:
-            # 콜론 누락 허용 ('- 홍길동 10/2/...' 형태)
-            m = re.match(r"^[-ㄴ]\s*([^\d:：/][^:：\d]*?)\s*[:：]?\s*([\d][\d\s/,·.]*)",
-                         line)
+            # 머리기호 제거 후 '이름 [:] 숫자/숫자/...' 매칭 (콜론 생략 허용)
+            line = re.sub(r"^[-ㄴ·*•]\s*", "", line)
+            m = re.match(r"^([^\d:：/][^:：\d]*?)\s*[:：]?\s*([\d][\d\s/,·.]*)", line)
             if not m:
+                continue
+            # 숫자가 너무 적으면 개인 라인이 아님 (구분선·안내문 방어)
+            if len([x for x in re.split(r"[/·]", m.group(2)) if x.strip()]) < 6:
                 continue
             name = m.group(1).strip()
             nums = [_num(x) for x in re.split(r"[/·]", m.group(2)) if x.strip()]
