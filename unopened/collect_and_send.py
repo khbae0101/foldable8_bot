@@ -3,7 +3,7 @@
  
 MODE
   remind : 18시 — 보고 요청 공지
-  report : 20시 — 수집 → 자동보정 → 이미지 1장 + 텍스트 1장 게시
+  report : 19시 — 수집 → 자동보정 → 이미지 1장 + 텍스트 1장 게시
  
 환경변수
   TELEGRAM_BOT_TOKEN / REPORT_CHAT_ID / ANNOUNCE_CHAT_ID
@@ -122,7 +122,7 @@ def main(mode="report"):
         pend = [n for n in allst
                 if not base or sum(base.get(n, zero_rec())[m][3] for m in MOD) > 0]
         txt = (f"📢 폴더블8 미개통 현황 취합 안내\n\n"
-               f"금일 미개통 건과 부족재고를 20시까지 공유 부탁드립니다.\n"
+               f"금일 미개통 건과 부족재고를 19시까지 공유 부탁드립니다.\n"
                f"※ 전일 0건 매장은 미보고해도 됩니다.\n"
                f"※ 전일 미개통 있었으나 금일 0건이 된 매장은 꼭 공유해 주세요.\n\n"
                f"[보고 양식]\n"
@@ -141,7 +141,7 @@ def main(mode="report"):
         print(f"remind 발송 (잔량 매장 {len(pend)}개)")
         return
  
-    # ── 20시 : 수집 → 보정 → 게시 ──
+    # ── 19시 : 수집 → 보정 → 게시 ──
     msgs = collect_messages(os.environ["REPORT_CHAT_ID"])
     got = parse_all(msgs, cfg)
     print(f"수집 메시지 {len(msgs)}건 / 인식 매장 {len(got)}곳")
