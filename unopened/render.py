@@ -2,8 +2,27 @@
 """미개통 현황 + 부족재고 이미지 렌더."""
 from PIL import Image, ImageDraw, ImageFont
  
-FB = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
-FR = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
+def _find_font(*cands):
+    """CJK 폰트 경로 탐색. 설치 실패 시에도 최대한 대체 폰트를 찾는다."""
+    import glob
+    import os
+    for c in cands:
+        if os.path.exists(c):
+            return c
+    for pat in ("/usr/share/fonts/**/NotoSansCJK*.ttc",
+                "/usr/share/fonts/**/NotoSerifCJK*.ttc",
+                "/usr/share/fonts/**/*CJK*.tt[cf]",
+                "/usr/share/fonts/**/*Nanum*.tt[cf]"):
+        hit = glob.glob(pat, recursive=True)
+        if hit:
+            return sorted(hit)[0]
+    raise RuntimeError("CJK 폰트를 찾을 수 없습니다")
+
+
+FB = _find_font("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
+                "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc")
+FR = _find_font("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+                "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc")
 F = lambda p, s: ImageFont.truetype(p, s)
  
 NAVY = (31, 53, 87); RED = (192, 57, 43); GREEN = (46, 125, 50)
