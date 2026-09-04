@@ -319,12 +319,12 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 아이폰18 
     ws3.sheet_view.showGridLines = False
     P_QUAL = QUAL_KEYS
     cols3 = ["순위", "상권", "매장", "이름", "목표", "실적", "달성률",
-             "MNP", "모두의\n행복"]
+             "MNP", "유치율", "모두의\n행복", "유치율"]
     for k in P_QUAL:
         cols3 += [(k if k != "삼디가전" else "삼/디/가전"), "유치율"]
     for i, h in enumerate(cols3):
         _style(ws3, f"{get_column_letter(2 + i)}1", h, bold=True, fill="D9D9D9")
-    widths3 = [5.5, 9, 12, 9, 6.5, 6.5, 8, 7, 7] + [6, 7] * 6
+    widths3 = [5.5, 9, 12, 9, 6.5, 6.5, 8, 6, 7, 7, 7] + [6, 7] * 6
     for i, w in enumerate(widths3):
         ws3.column_dimensions[get_column_letter(2 + i)].width = w
 
@@ -334,7 +334,8 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 아이폰18 
         vals = [p.get("순위"), p.get("상권", ""), p.get("조직", ""), name,
                 p["목표"], p["실적"],
                 p["실적"] / p["목표"] if p["목표"] else None,
-                p["MNP"], p["모행"]]
+                p["MNP"], (p["MNP"] / g if g else None),
+                p["모행"], (p["모행"] / g if g else None)]
         for k in P_QUAL:
             vals += [p[k], p[k] / g if g else None]
         hl = {}
@@ -345,12 +346,12 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 아이폰18 
             for idx, k in enumerate(P_QUAL):
                 h = p.get("유치율HL", {}).get(k)
                 if h:
-                    hl[10 + 2 * idx] = h
+                    hl[12 + 2 * idx] = h
         for i, v in enumerate(vals):
             fmt = None
             if i == 6:
                 fmt = "0.0%"
-            elif i >= 9 and (i - 9) % 2 == 1:
+            elif i in (8, 10) or (12 <= i <= 22 and i % 2 == 0):
                 fmt = "0%"
             fill = "262626" if kind == "total" else None
             color = "FFFFFF" if kind == "total" else None
