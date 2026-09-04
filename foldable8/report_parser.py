@@ -67,17 +67,47 @@ def _single(text, label_pattern):
 
 
 def match_store(name_raw, stores_cfg):
-    """보고 메시지의 매장명을 마스터의 정식 조직명으로 매핑."""
-    name = re.sub(r"(점|매장)$", "", name_raw.strip())
+    """보고 메시지의 매장명을 마스터의 정식 조직명으로 매핑.
+
+    실제 보고에서 '건대직영점점', '도농로 직영점', '의점부로데오점'(오타) 등
+    표기 흔들림이 잦아 접미사 제거 → 정식명 → 별칭 → 부분일치 순으로 시도한다.
+    """
     names = [s["조직"] for s in stores_cfg["매장"]]
-    if name in names:
-        return name
     alias = stores_cfg.get("매장명_별칭", {})
-    if name in alias:
-        return alias[name]
+
+    raw = name_raw.strip()
+    # 접미사·공백 정리 ('OO직영점점', 'OO 직영점', 'OO매장' 등)
+    cands = [raw]
+    n = re.sub(r"[\s]*(직영)?(점|매장)+\s*$", "", raw)
+    cands.append(n)
+    cands.append(n.replace(" ", ""))
+
+    for c in cands:
+        if c in names:
+            return c
+        if c in alias:
+            return alias[c]
+
     # 부분일치 (유일할 때만)
-    hits = [n for n in names if name in n or n in name]
-    if len(hits) == 1:
+    for c in cands:
+        hits = [x for x in names if c and (c in x or x in c)]
+        if len(hits) == 1:
+            return hits[0]
+        # 별칭 부분일치
+        ah = {v for k, v in alias.items() if c and (c in k or k in c)}
+        if len(ah) == 1:
+            return ah.pop()
+
+    # 오타 대응 : 한 글자 차이 이내면 동일 매장으로 간주
+    def close(a, b):
+        if abs(len(a) - len(b)) > 1 or not a or not b:
+            return False
+        diff = sum(1 for x, y in zip(a, b) if x != y) + abs(len(a) - len(b))
+        return diff <= 1
+    base = cands[1].replace(" ", "")
+    hits = [x for x in names if close(base, x)] or \
+           [v for k, v in alias.items() if close(base, k)]
+    if len(set(hits)) == 1:
         return hits[0]
     return None
 
