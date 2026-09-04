@@ -1,30 +1,34 @@
 # -*- coding: utf-8 -*-
-"""폴더블8 예약현황 텔레그램 보고 메시지 파서.
+"""아이폰18 예약현황 텔레그램 보고 메시지 파서.
 
 보고 양식:
-■ ㅇㅇ점 폴더블8 예약현황 보고
+■ ㅇㅇ점 아이폰18 예약현황 보고
 
 ㅇ CRM 현황
-- CRM 확보모수 : 0,000건
-- 컨택완료 : 00/00/00건 (성공/보류/실패)
+
+CRM 확보모수 : 0건
+컨택완료 : 0/0/0건 (성공/보류/실패)
 
 ㅇ 예약현황
- - 예약 계 : 00/00건 (당일/누적)
-   ㄴ 폴드8 : 00/00건
-   ㄴ 폴드8 와이드 : 00/00건
-   ㄴ 플립8 : 00/00건
- - 모두의 행복 : 0건 (누적)
- - 소규모/법인 특판 : 0건 (누적)
+
+예약 계 : 0/0건 (당일/누적)
+    ㄴ 18P : 0/0건
+    ㄴ 18PM : 0/0건
+MNP : 0건 (누적)
+모두의 행복 : 0건 (누적)
 
 ㅇ Quality (누적)
-  - 120K : 00건
-  - 110K : 00건
-  - 2nd : 00건
-  - 삼/디초 : 00건
-  - 가전구독 : 00건
-  - 제휴카드 : 00건
-  - 라이프 : 00건
-  - MIT : 00건 (M 기준)
+
+120K : 0건
+2nd : 0건
+삼/디/가전 : 0건
+제휴카드 : 0건
+라이프 : 0건
+MIT : 0건 (M 기준)
+
+ㅇ 개인별 (목표/실적/MNP/모행/120K/2nd/삼디가전/카드/라이프/MIT)
+
+홍길동 : 10/4/2/0/4/4/4/3/4/2
 """
 import json
 import re
@@ -84,7 +88,7 @@ def parse_report(text, stores_cfg):
     first = text.strip().split("\n")[0]
     if "예약현황" not in first or not re.search(r"예약\s*계\s*[:：]", text):
         return None
-    m = re.search(r"■?\s*(.+?)\s*(?:폴더블8)?\s*예약현황\s*보고", first)
+    m = re.search(r"■?\s*(.+?)\s*(?:아이폰18|폴더블8)?\s*예약현황\s*보고", first)
     if not m:
         return None
     store = match_store(m.group(1), stores_cfg)
@@ -106,10 +110,9 @@ def parse_report(text, stores_cfg):
     total = _pair(text, r"예약\s*계")
     d["예약당일"], d["예약누적"] = total if total else (0, 0)
 
-    # 모델별: 'ㄴ' 줄 순서 기준 집계 (1번째=폴드8 울트라, 2번째=와이드, 3번째=플립8)
-    # → 라벨이 구양식('폴드8')이든 신양식('폴드8 울트라')이든 순서로 인식
-    model_keys = ["울트라", "와이드", "플립8"]
-    sub_lines = re.findall(r"^\s*ㄴ\s*(.+)$", text, re.MULTILINE)[:3]
+    # 모델별: 'ㄴ' 줄 순서 기준 집계 (1번째=18P, 2번째=18PM)
+    model_keys = ["18P", "18PM"]
+    sub_lines = re.findall(r"^\s*ㄴ\s*(.+)$", text, re.MULTILINE)[:2]
     for i, key in enumerate(model_keys):
         if i < len(sub_lines):
             p = _pair(sub_lines[i], r"")
@@ -117,27 +120,27 @@ def parse_report(text, stores_cfg):
         else:
             d[f"{key}당일"], d[f"{key}누적"] = 0, 0
 
+    d["MNP"] = _single(text, r"MNP")
     d["모두의행복"] = _single(text, r"모두의\s*행복")
-    d["소규모법인"] = _single(text, r"소규모\s*/?\s*법인\s*특판")
 
     # Quality
-    for key, pat in [("120K", r"120\s*K"), ("110K", r"110\s*K"), ("2nd", r"2\s*nd"),
-                     ("삼디초", r"삼\s*/?\s*디초"), ("가전구독", r"가전\s*구독"),
+    for key, pat in [("120K", r"120\s*K"), ("2nd", r"2\s*nd"),
+                     ("삼디가전", r"삼\s*/?\s*디\s*/?\s*가전"),
                      ("제휴카드", r"제휴\s*카드"), ("라이프", r"라이프"), ("MIT", r"MIT")]:
         d[key] = _single(text, pat)
 
     # 검증: 모델별 누적 합 = 예약누적
-    model_sum = d["울트라누적"] + d["와이드누적"] + d["플립8누적"]
+    model_sum = d["18P누적"] + d["18PM누적"]
     d["검증오류"] = []
     if model_sum != d["예약누적"]:
         d["검증오류"].append(f"모델별 합({model_sum}) ≠ 예약누적({d['예약누적']})")
 
-    # 개인별 실적 (고정 순서 12필드: 목표/실적/모행/특판/120K/110K/2nd/삼디초/가전/카드/라이프/MIT)
+    # 개인별 실적 (고정 순서 10필드: 목표/실적/MNP/모행/120K/2nd/삼디가전/카드/라이프/MIT)
     d["개인별"] = []
     psec = re.search(r"ㅇ\s*개인별[^\n]*\n(.*?)(?=\nㅇ|\Z)", text, re.DOTALL)
     if psec:
-        person_keys = ["목표", "실적", "모행", "특판",
-                       "120K", "110K", "2nd", "삼디초", "가전구독",
+        person_keys = ["목표", "실적", "MNP", "모행",
+                       "120K", "2nd", "삼디가전",
                        "제휴카드", "라이프", "MIT"]
         # 줄 병합: 이름만 있고 숫자가 다음 줄로 넘어간 경우 대응
         # (머리기호 -, ㄴ, ·, * 는 있어도 없어도 인식)
@@ -165,21 +168,28 @@ def parse_report(text, stores_cfg):
             if not m:
                 continue
             # 숫자가 너무 적으면 개인 라인이 아님 (구분선·안내문 방어)
-            if len([x for x in re.split(r"[/·]", m.group(2)) if x.strip()]) < 6:
+            if len([x for x in re.split(r"[/·]", m.group(2)) if x.strip()]) < 5:
                 continue
             name = m.group(1).strip()
             nums = [_num(x) for x in re.split(r"[/·]", m.group(2)) if x.strip()]
             p = {"이름": name}
-            if len(nums) != 12:
-                d["검증오류"].append(f"개인별 '{name}' 숫자 {len(nums)}개 (12개 필요)")
+            if len(nums) != 10:
+                d["검증오류"].append(f"개인별 '{name}' 숫자 {len(nums)}개 (10개 필요)")
             for i, k in enumerate(person_keys):
                 p[k] = nums[i] if i < len(nums) else 0
             d["개인별"].append(p)
         # 개인 합 = 매장 값 대사
         if d["개인별"]:
-            checks = [("실적", "예약누적"), ("모행", "모두의행복"), ("특판", "소규모법인")] + \
-                     [(k, k) for k in ["120K", "110K", "2nd", "삼디초",
-                                       "가전구독", "제휴카드", "라이프", "MIT"]]
+            checks = [("실적", "예약누적"), ("MNP", "MNP"), ("모행", "모두의행복")] + \
+                     [(k, k) for k in ["120K", "2nd", "삼디가전",
+                                       "제휴카드", "라이프", "MIT"]]
+            # 포함관계 검증 (모행 ≤ MNP ≤ 실적)
+            if d["모두의행복"] > d["MNP"]:
+                d["검증오류"].append(
+                    f"모행({d['모두의행복']}) > MNP({d['MNP']}) — 포함관계 위배")
+            if d["MNP"] > d["예약누적"]:
+                d["검증오류"].append(
+                    f"MNP({d['MNP']}) > 예약누적({d['예약누적']}) — 포함관계 위배")
             for pk, sk in checks:
                 psum = sum(p[pk] for p in d["개인별"])
                 if psum != d[sk]:
