@@ -15,48 +15,39 @@ import requests
 
 # ── 날짜별 마무리 독려 멘트 (출시 8/4, 잔여 영업일 = 오늘 제외 일요일 뺀 값) ──
 CLOSING = {
-    "20260725": (
-        "🌙 아이폰18 출시까지 D-10 · 잔여 영업일 7일\n"
-        "뜨거웠던 첫 주말, 하루 종일 서서 웃어 보이느라 다리도 마음도 고단하셨죠. "
-        "그 미소 하나에 마음을 연 고객이 분명 있었을 거예요. "
-        "오늘만큼은 아무 생각 말고 푹 쉬세요. 내일, 다시 웃으며 만나요."),
-    "20260727": (
-        "☀️ 출시까지 D-8 · 잔여 영업일 6일\n"
-        "또 한 번 월요일을 여는 여러분의 뒷모습이 참 든든합니다. "
-        "지난주에 흘린 땀은 어디로도 사라지지 않아요, 오늘의 한 걸음 아래 차곡차곡 쌓여 있습니다. "
-        "무거운 아침을 열어줘서, 정말 고맙습니다."),
-    "20260728": (
-        "🔥 출시까지 D-7 · 잔여 영업일 5일\n"
-        "공식 사전예약 첫날, 눈코 뜰 새 없이 바쁜 하루였죠. "
-        "하루가 유난히 길게 느껴지셨을 거예요. "
-        "그래도 오늘의 한 건 한 건, 모두 여러분이 만들어낸 것입니다. "
-        "정말 고생 많으셨습니다."),
-    "20260729": (
-        "💪 출시까지 D-6 · 잔여 영업일 4일\n"
-        "한 주의 한가운데, 몸도 마음도 가장 지치는 날이죠. "
-        "그래도 오늘 여러분이 채운 그 한 칸이, 내일의 우리를 살며시 앞으로 밀어줍니다. "
-        "잠깐 숨 한번 크게 쉬고—우리 조금만 더 가봐요."),
-    "20260730": (
-        "🌟 출시까지 D-5 · 잔여 영업일 3일\n"
-        "이제 정말 손끝에 닿을 만큼 남았습니다. 힘든 거, 다 압니다. "
-        "그래도 옆자리엔 같이 뛰는 동료가, 뒤에는 언제나 여러분 편인 우리가 있어요. "
-        "혼자 짊어진 게 아니니까—딱 조금만 더, 함께 힘내요."),
-    "20260731": (
-        "🌈 출시까지 D-4 · 잔여 영업일 2일\n"
-        "벌써 7월의 마지막 밤이네요. 한 달을 쉼 없이 달려온 여러분은, "
-        "결과가 어떻든 이미 충분히 자랑스러운 사람들입니다. "
-        "마지막 주말을 앞두고—우리 안에 남은 열정, 딱 그만큼만 더 모아봐요."),
-    "20260801": (
-        "❤️‍🔥 출시까지 D-3 · 잔여 영업일 1일\n"
-        "마지막 토요일입니다. 지난 한 달, 여러분이 흘린 모든 땀과 마음이 "
-        "바로 오늘 이 자리에 담겨 있어요. 잘하려 애쓰지 말고, 그냥 우리답게. "
-        "후회 없이, 뜨겁게. 오늘의 여러분을 마음 깊이 응원합니다."),
-    "20260803": (
-        "🎉 대장정의 마지막 날입니다 (내일, 드디어 아이폰18 출시!)\n"
-        "드디어 여기까지 왔습니다. 이른 아침 셔터를 올리던 손, 늦은 저녁까지 식지 않던 열정—"
-        "그 하루하루가 모여 오늘의 강동소매가 되었어요. "
-        "결과를 떠나, 끝까지 달려온 여러분이 저는 참 자랑스럽습니다. "
-        "마지막 한 건까지, 우리답게. 정말, 정말 고생 많으셨습니다. 🎊"),
+    # 9/5(토) ~ 9/10(수) : 사전 준비 기간
+    "20260905": "🚀 아이폰18 예약 대장정의 첫날입니다\n"
+                "오늘부터 9/17까지, 13일간의 여정을 함께 시작합니다. "
+                "첫 단추가 중요합니다. 내일도 좋은 흐름 이어가요!",
+    "20260908": "💪 D-9, 한 주의 시작입니다\n"
+                "공식 사전예약(9/11)까지 사흘 남았습니다. "
+                "지금 확보한 대기 고객이 개시일의 실적이 됩니다. 오늘도 고생하셨습니다.",
+    "20260910": "⚡ 내일이면 공식 사전예약 개시입니다\n"
+                "그동안 쌓아온 대기 고객, 내일 한 번에 접수될 수 있도록 "
+                "오늘 밤 최종 점검 부탁드립니다. 내일 뵙겠습니다!",
+    # 9/11(목) ~ 9/17(수) : 공식 사전예약
+    "20260911": "🔥 공식 사전예약 첫날, 정말 고생 많으셨습니다\n"
+                "눈코 뜰 새 없이 바쁜 하루였을 겁니다. "
+                "오늘의 기세, 남은 엿새 동안 이어가 봅시다.",
+    "20260912": "👏 사전예약 이틀째, 흐름이 잡혀갑니다\n"
+                "내일은 주말 첫날입니다. 오늘 상담만 하고 가신 고객,"
+                " 내일 방문 약속으로 연결해 주세요.",
+    "20260913": "🌟 주말 첫날 수고하셨습니다\n"
+                "내방 고객이 몰리는 시기입니다. "
+                "내일도 한 분 한 분 놓치지 않도록 함께 힘내요.",
+    "20260914": "🌈 주말 마무리, 정말 애쓰셨습니다\n"
+                "이제 사흘 남았습니다. 남은 대기 고객 리스트,"
+                " 내일부터 최종 컨택 부탁드립니다.",
+    "20260915": "💫 D-2, 마지막 스퍼트 구간입니다\n"
+                "미결정 고객에게 오늘 연락 한 번 더. "
+                "작은 한 건이 순위를 바꿉니다.",
+    "20260916": "❤️‍🔥 내일이면 예약 마감입니다\n"
+                "오늘 하루도 끝까지 붙잡아 주셔서 감사합니다. "
+                "마지막 하루, 후회 없이 달려봅시다!",
+    "20260917": "🎉 예약 대장정이 마무리됐습니다\n"
+                "13일간 정말 고생 많으셨습니다. 이른 아침부터 늦은 저녁까지, "
+                "여러분의 하루하루가 모여 오늘의 강동소매를 만들었습니다.\n"
+                "내일은 그 결실을 만나는 날입니다. 마지막까지, 우리답게. 🎊",
 }
 
 
@@ -89,10 +80,18 @@ def load_prev(data_dir, now, prefix, max_back=7):
     return None
 
 
-def make_snapshot(agg):
+def make_snapshot(agg, now=None, cfg=None):
     """오늘 집계 → 비교용 스냅샷 (연속기록은 compute_facts에서 갱신)."""
     snap = {"지사누적": agg["지사계"]["예약누적"],
             "매장": {}, "개인": {}, "상권": {}}
+    # 캠페인 경과일수 (달성 예상 계산용)
+    if now and cfg:
+        try:
+            from datetime import date
+            st = date.fromisoformat(cfg["캠페인"]["시작"])
+            snap["경과일수"] = max((now.date() - st).days + 1, 1)
+        except Exception:
+            snap["경과일수"] = 1
     for s in agg["매장_정렬"]:
         if s.get("데이터있음"):
             snap["매장"][s["조직"]] = {
@@ -109,6 +108,8 @@ def make_snapshot(agg):
 
 def compute_facts(agg, snap, prev):
     """오늘 스냅샷 + 전일 스냅샷 → 변화·마일스톤 사실 목록. snap의 연속기록 갱신."""
+    if prev and prev.get("무실적인원") is not None:
+        snap["무실적인원_전일"] = prev["무실적인원"]
     t = agg["지사계"]
     facts = {"기본": [], "매장변화": [], "개인변화": [], "마일스톤": []}
 
@@ -240,9 +241,11 @@ def build_prompt(facts, date_str, model_name, prev_insight):
             + "\n\n".join(parts) + "\n\n" + BIZ_RULES + prev_block + "\n\n"
             "위 데이터에 있는 사실만 근거로 지사장 관점의 시사점을 작성해줘.\n"
             "형식(그대로):\n"
-            "💬 오늘의 포인트\n\n[매장]\n• (3줄)\n\n[개인]\n• (3줄)\n\n"
+            "💬 오늘의 포인트\n\n[매장]\n• (최대 5줄)\n\n[개인]\n• (최대 5줄)\n\n"
             "규칙:\n"
-            "- 매장 3줄, 개인 3줄. 각 줄은 한 문장, 전체 600자 이내.\n"
+            "- 매장·개인 각 최대 5줄. 각 줄은 한 문장 40자 이내.\n"
+            "- 짧고 담백하게. 수식어·부연 설명 없이 핵심만.\n"
+            "- 소재가 부족하면 줄 수를 줄여도 됨 (억지로 5줄 채우지 말 것).\n"
             "- 마일스톤이 있으면 우선 반영 (🎉 사용 가능).\n"
             "- 잘한 곳은 구체적으로 칭찬, 정체·부진은 매장명/이름 명시해 독려 "
             "(비난 아닌 코칭 톤).\n"
@@ -259,7 +262,7 @@ def generate(agg, stores_cfg, date_str, data_dir, now):
     prev = load_prev(data_dir, now, "snapshot")
     prev_insight = (load_prev(data_dir, now, "insight") or {}).get("text")
 
-    snap = make_snapshot(agg)
+    snap = make_snapshot(agg, now, stores_cfg)
     facts = compute_facts(agg, snap, prev)
     prompt = build_prompt(facts, date_str, stores_cfg["모델명"], prev_insight)
     try:
@@ -267,7 +270,7 @@ def generate(agg, stores_cfg, date_str, data_dir, now):
             "https://api.anthropic.com/v1/messages",
             headers={"x-api-key": key, "anthropic-version": "2023-06-01",
                      "content-type": "application/json"},
-            json={"model": "claude-sonnet-4-6", "max_tokens": 900,
+            json={"model": "claude-sonnet-4-6", "max_tokens": 1100,
                   "messages": [{"role": "user", "content": prompt}]},
             timeout=60)
         r.raise_for_status()
@@ -284,3 +287,77 @@ def generate(agg, stores_cfg, date_str, data_dir, now):
     (data_dir / f"insight_{ymd}.json").write_text(
         json.dumps({"text": text}, ensure_ascii=False, indent=1), encoding="utf-8")
     return text, closing, None
+
+
+# ─────────────────────────── 체크포인트 ───────────────────────────
+LINK_KEYS = ["120K", "2nd", "삼디가전", "제휴카드", "라이프", "MIT"]
+
+
+def build_checkpoint(agg, snap, remain_days, date_label):
+    """규칙 기반 경보 블록. 시사점과 별개로 매일 발송."""
+    t = agg["지사계"]
+    live = [s for s in agg["매장_정렬"] if s.get("데이터있음")]
+    days = max(snap.get("경과일수", 1), 1)
+
+    def proj(s):
+        pace = max(s["증분"] or 0, s["예약누적"] / days)
+        return (s["예약누적"] + pace * remain_days) / s["목표"] * 100 if s["목표"] else 0
+
+    L = [f"⚠ 오늘의 체크포인트 ({date_label} 기준)", ""]
+
+    # 1) 2일 연속 예약 0건
+    z = [n for n, v in snap["매장"].items() if v.get("zero", 0) >= 2]
+    L += ["🔴 2일 연속 예약 0건", "   " + (", ".join(sorted(z)) if z else "없음"), ""]
+
+    # 2) 달성 60% 미달 예상
+    under = sorted(((s["조직"], proj(s)) for s in live if proj(s) < 60),
+                   key=lambda x: x[1])
+    if under:
+        head = ", ".join(f"{n}({r:.0f}%)" for n, r in under[:5])
+        more = f"  외 {len(under)-5}개점" if len(under) > 5 else ""
+        L += ["🔴 달성 60% 미달 예상", f"   {head}{more}", ""]
+
+    # 3) 연계 0건 매장수 ㅣ 항목별 1위
+    L.append("🔴 연계 0건 매장수 ㅣ 항목별 1위")
+    for k in LINK_KEYS:
+        zc = sum(1 for s in live if s.get(k, 0) == 0)
+        cand = [s for s in live if s["예약누적"] > 0]
+        if cand:
+            best = max(cand, key=lambda s: s[k] / s["예약누적"])
+            br = best[k] / best["예약누적"] * 100
+            L.append(f"   {k:8s}{zc:2d}개점  ㅣ {best['조직']} {br:.0f}%")
+    L.append("")
+
+    # 4) 무실적 인원
+    persons = agg.get("개인", [])
+    nz = sum(1 for p in persons if p["실적"] == 0)
+    pz = snap.get("무실적인원_전일")
+    tail = f" (전일 {pz}명)" if pz is not None else ""
+    L += [f"🟡 무실적 인원 {nz}명{tail}", ""]
+
+    # 5) 1인 의존 50%↑
+    dep = []
+    for s in live:
+        if s["예약누적"] < 5:
+            continue
+        ps = [p for p in persons if p.get("조직") == s["조직"]]
+        if not ps:
+            continue
+        top = max(ps, key=lambda p: p["실적"])
+        r = top["실적"] / s["예약누적"] * 100
+        if r >= 50:
+            dep.append((s["조직"], r))
+    dep.sort(key=lambda x: -x[1])
+    if dep:
+        L += ["🟡 1인 의존 50%↑",
+              "   " + ", ".join(f"{n}({r:.0f}%)" for n, r in dep[:3]), ""]
+
+    # 6) 달성 예상 100%↑
+    over = sorted(((s["조직"], proj(s)) for s in live if proj(s) >= 100),
+                  key=lambda x: -x[1])
+    if over:
+        L += ["🟢 달성 예상 (100%↑)",
+              "   " + ", ".join(f"{n}({r:.0f}%)" for n, r in over[:4])]
+
+    snap["무실적인원"] = nz
+    return "\n".join(L).rstrip()
