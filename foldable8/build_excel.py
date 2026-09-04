@@ -163,7 +163,7 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 아이폰18 
     ws.sheet_view.showGridLines = False
 
     heads = [("상권", 1), ("코드", 1), ("조직", 1), ("목표", 1), ("예약", 1), ("증분", 1),
-             ("달성률", 1), ("순위", 1), ("모델별", 3), ("모두의\n행복", 1), ("소규모\n/법인", 1)]
+             ("달성률", 1), ("순위", 1), ("모델별", 2), ("MNP", 2), ("모두의\n행복", 2)]
     heads += [(k if k != "삼디가전" else "삼/디/가전", 2) for k in QUAL_KEYS]
     heads += [("전일마감", 1)]
 
@@ -211,7 +211,8 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 아이폰18 
                  rec["예약누적"] / rec["목표"] if rec["목표"] else None,
                  rec.get("순위"),
                  rec["18P누적"], rec["18PM누적"],
-                 rec["MNP"], rec["모두의행복"]]
+                 rec["MNP"], (rec["MNP"] / g if g else None),
+                 rec["모두의행복"], (rec["모두의행복"] / g if g else None)]
         for k in QUAL_KEYS:
             cells += [rec[k], rec[k] / g if g else None]
         cells += [rec["전일마감"]]
@@ -226,7 +227,7 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 아이폰18 
             for idx, k in enumerate(QUAL_KEYS):
                 h = rec.get("유치율HL", {}).get(k)
                 if h:
-                    hl[14 + 2 * idx] = h
+                    hl[15 + 2 * idx] = h
         for i, v in enumerate(cells):
             cl = get_column_letter(2 + i)
             fmt = None
@@ -247,9 +248,8 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 아이폰18 
                    color=cell_color)
 
     def cl_is_rate(i):
-        if i == 6:  # 달성률
-            return True
-        return i >= 13 and (i - 13) % 2 == 1 and i < 13 + 16
+        # 6=달성률, 11=MNP율, 13=모행율, 15~25=연계 유치율(홀수)
+        return i in (6, 11, 13) or (15 <= i <= 25 and i % 2 == 1)
 
     r = r0 + 2
     write_row(r, agg["지사계"], "total"); r += 1
