@@ -3,13 +3,13 @@
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
- 
-QUAL_KEYS = ["120K", "110K", "2nd", "삼디초", "가전구독", "제휴카드", "라이프", "MIT"]
-NUM_KEYS = (["예약당일", "예약누적", "울트라당일", "울트라누적", "와이드당일", "와이드누적",
-             "플립8당일", "플립8누적", "모두의행복", "소규모법인",
+
+QUAL_KEYS = ["120K", "2nd", "삼디가전", "제휴카드", "라이프", "MIT"]
+NUM_KEYS = (["예약당일", "예약누적", "18P당일", "18P누적", "18PM당일", "18PM누적",
+             "MNP", "모두의행복",
              "CRM모수", "컨택완료", "컨택성공", "컨택보류", "컨택실패"] + QUAL_KEYS)
- 
- 
+
+
 def aggregate(reports, stores_cfg, prev_close=None, prev_reports=None):
     """reports: {조직명: 파싱결과}, prev_close: {조직명: 전일 누적},
     prev_reports: {조직명: 전일 파싱결과} — 당일 미제출 매장은 전일 보고값 이월."""
@@ -43,13 +43,13 @@ def aggregate(reports, stores_cfg, prev_close=None, prev_reports=None):
             rec["전일마감"] = prev_close.get(s["조직"])
             rec["증분"] = None
         stores.append(rec)
- 
+
     with_data = [s for s in stores if s["데이터있음"]]
     with_data.sort(key=lambda s: (s["예약누적"] / s["목표"]) if s["목표"] else 0,
                    reverse=True)
     for i, s in enumerate(with_data, 1):
         s["순위"] = i
- 
+
     # 상/하위 25% 하이라이트 (달성률·순위 + 유치율 컬럼별)
     n = len(with_data)
     q = max(1, int(n * 0.25 + 0.5))
@@ -62,7 +62,7 @@ def aggregate(reports, stores_cfg, prev_close=None, prev_reports=None):
         for i, s in enumerate(ranked):
             s.setdefault("유치율HL", {})[key] = \
                 "good" if i < q else ("bad" if i >= n - q else None)
- 
+
     def total(rows, name):
         t = {"조직": name, "코드": "", "상권": "", "목표": sum(r["목표"] for r in rows)}
         for k in NUM_KEYS:
@@ -72,7 +72,7 @@ def aggregate(reports, stores_cfg, prev_close=None, prev_reports=None):
         t["증분"] = t["예약누적"] - t["전일마감"] if t["전일마감"] is not None else \
             sum(r["증분"] or 0 for r in rows)
         return t
- 
+
     regions_order = []
     for s in stores_cfg["매장"]:
         if s["상권"] not in regions_order:
@@ -84,7 +84,7 @@ def aggregate(reports, stores_cfg, prev_close=None, prev_reports=None):
                  reverse=True)
     for i, g in enumerate(ach, 1):
         region_totals[g]["순위"] = i
- 
+
     result = {
         "지사계": total(stores, "지사 계"),
         "상권": region_totals,
@@ -92,7 +92,7 @@ def aggregate(reports, stores_cfg, prev_close=None, prev_reports=None):
         "매장": stores,
         "매장_정렬": with_data + [s for s in stores if not s["데이터있음"]],
     }
- 
+
     # ── 개인별 집계 ──
     persons = []
     store_lookup = {s["조직"]: s for s in stores_cfg["매장"]}
@@ -114,7 +114,7 @@ def aggregate(reports, stores_cfg, prev_close=None, prev_reports=None):
         q = max(1, int(n * 0.25 + 0.5))
         for i, p in enumerate(persons):
             p["달성률HL"] = "good" if i < q else ("bad" if i >= n - q else None)
-        pq_keys = ["120K", "110K", "2nd", "삼디초", "가전구독", "제휴카드", "라이프", "MIT"]
+        pq_keys = ["120K", "2nd", "삼디가전", "제휴카드", "라이프", "MIT"]
         for key in pq_keys:
             ranked = sorted(persons,
                             key=lambda p: (p[key] / p["실적"]) if p["실적"] else 0,
@@ -123,8 +123,8 @@ def aggregate(reports, stores_cfg, prev_close=None, prev_reports=None):
                 p.setdefault("유치율HL", {})[key] = \
                     "good" if i < q else ("bad" if i >= n - q else None)
     ptotal = {"이름": "지사 계", "조직": "", "상권": ""}
-    for k in ["목표", "실적", "모행", "특판", "120K", "110K", "2nd", "삼디초",
-              "가전구독", "제휴카드", "라이프", "MIT"]:
+    for k in ["목표", "실적", "MNP", "모행", "120K", "2nd", "삼디가전",
+              "제휴카드", "라이프", "MIT"]:
         ptotal[k] = sum(p[k] for p in persons)
     result["개인"] = persons
     result["개인지사계"] = ptotal
@@ -132,14 +132,14 @@ def aggregate(reports, stores_cfg, prev_close=None, prev_reports=None):
                                 if s.get("데이터있음")
                                 and not (reports.get(s["조직"]) or prev_reports.get(s["조직"], {})).get("개인별")]
     return result
- 
- 
+
+
 # ---------------------------------------------------------------- Excel ----
 THIN = Side(style="thin", color="A0A0A0")
 BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
 CENTER = Alignment(horizontal="center", vertical="center", wrap_text=True)
- 
- 
+
+
 def _style(ws, cell, v, bold=False, fill=None, fmt=None, color=None):
     c = ws[cell]
     c.value = v
@@ -152,21 +152,21 @@ def _style(ws, cell, v, bold=False, fill=None, fmt=None, color=None):
     if fmt:
         c.number_format = fmt
     return c
- 
- 
-def build_workbook(agg, date_str, out_path, title="■ 강동소매 폴더블8 매장별 예약현황"):
+
+
+def build_workbook(agg, date_str, out_path, title="■ 강동소매 아이폰18 매장별 예약현황"):
     wb = Workbook()
- 
+
     # ---------- 요약 시트 ----------
     ws = wb.active
     ws.title = "요약"
     ws.sheet_view.showGridLines = False
- 
+
     heads = [("상권", 1), ("코드", 1), ("조직", 1), ("목표", 1), ("예약", 1), ("증분", 1),
              ("달성률", 1), ("순위", 1), ("모델별", 3), ("모두의\n행복", 1), ("소규모\n/법인", 1)]
-    heads += [(k if k != "삼디초" else "삼/디초", 2) for k in QUAL_KEYS]
+    heads += [(k if k != "삼디가전" else "삼/디/가전", 2) for k in QUAL_KEYS]
     heads += [("전일마감", 1)]
- 
+
     ws.merge_cells("B2:H2")
     _style(ws, "B2", title, bold=True, fill="3F3F3F", color="FFFFFF")
     ws["B2"].font = Font(name="맑은 고딕", size=16, bold=True, color="FFFFFF")
@@ -175,7 +175,7 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 폴더블8 �
     last_col = get_column_letter(1 + n_cols)
     _style(ws, f"{last_col}2", date_str, bold=True, color="C00000")
     ws.row_dimensions[2].height = 28
- 
+
     r0 = 4
     col = 2
     for name, span in heads:
@@ -184,7 +184,7 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 폴더블8 �
         fill = "FFF200" if name == "전일마감" else "D9D9D9"
         _style(ws, f"{c1}{r0}", name, bold=True, fill=fill)
         if span > 1:
-            subs = ["울트라", "와이드", "플립8"] if name == "모델별" else ["건", "유치율"]
+            subs = ["18P", "18PM"] if name == "모델별" else ["건", "유치율"]
             for i, sub in enumerate(subs):
                 _style(ws, f"{get_column_letter(col + i)}{r0}", name if i == 0 else None,
                        bold=True, fill=fill) if i else None
@@ -195,10 +195,10 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 폴더블8 �
             _style(ws, f"{c1}{r0 + 1}", None, fill=fill)
             ws.merge_cells(f"{c1}{r0}:{c1}{r0 + 1}")
         col += span
- 
+
     HL_FILL = {"good": "C6EFCE", "bad": "FFC7CE"}
     HL_FONT = {"good": "006100", "bad": "9C0006"}
- 
+
     def write_row(r, rec, kind):
         fills = {"total": "262626", "region": "E4DFEC"}
         fill = fills.get(kind)
@@ -210,8 +210,8 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 폴더블8 �
                  rec["증분"],
                  rec["예약누적"] / rec["목표"] if rec["목표"] else None,
                  rec.get("순위"),
-                 rec["울트라누적"], rec["와이드누적"], rec["플립8누적"],
-                 rec["모두의행복"], rec["소규모법인"]]
+                 rec["18P누적"], rec["18PM누적"],
+                 rec["MNP"], rec["모두의행복"]]
         for k in QUAL_KEYS:
             cells += [rec[k], rec[k] / g if g else None]
         cells += [rec["전일마감"]]
@@ -245,12 +245,12 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 폴더블8 �
                 cell_color = "969696"
             _style(ws, f"{cl}{r}", v, bold=bold, fill=cell_fill, fmt=fmt,
                    color=cell_color)
- 
+
     def cl_is_rate(i):
         if i == 6:  # 달성률
             return True
         return i >= 13 and (i - 13) % 2 == 1 and i < 13 + 16
- 
+
     r = r0 + 2
     write_row(r, agg["지사계"], "total"); r += 1
     for reg in agg["상권순서"]:
@@ -268,19 +268,19 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 폴더블8 �
         _style(ws, f"B{r + 1}", " / ".join(note), bold=True, color="C00000")
         ws[f"B{r + 1}"].alignment = Alignment(horizontal="left")
         ws[f"B{r + 1}"].border = Border()
- 
+
     widths = [9, 10, 12, 6.5, 6.5, 6, 8, 5.5, 6.5, 6.5, 6.5, 7, 7] + [6, 7] * 8 + [8.5]
     for i, w in enumerate(widths):
         ws.column_dimensions[get_column_letter(2 + i)].width = w
- 
+
     # ---------- raw 시트 (CRM 포함, 메일용) ----------
     ws2 = wb.create_sheet("raw(CRM포함)")
     cols2 = ["상권", "코드", "조직", "목표",
              "CRM 모수", "컨택완료", "컨택 성공", "컨택 보류", "컨택 실패", "컨택률",
              "예약 당일", "예약 누적", "달성률", "증분",
-             "울트라 당일", "울트라 누적", "와이드 당일", "와이드 누적",
-             "플립8 당일", "플립8 누적", "모두의 행복", "소규모/법인 특판"] + \
-            [k if k != "삼디초" else "삼/디초" for k in QUAL_KEYS] + ["전일마감", "제출여부"]
+             "18P 당일", "18P 누적", "18PM 당일", "18PM 누적",
+             "MNP", "모두의 행복"] + \
+            [k if k != "삼디가전" else "삼/디/가전" for k in QUAL_KEYS] + ["전일마감", "제출여부"]
     for i, h in enumerate(cols2):
         _style(ws2, f"{get_column_letter(1 + i)}1", h, bold=True, fill="D9D9D9")
         ws2.column_dimensions[get_column_letter(1 + i)].width = max(8, len(h) * 1.6 + 3)
@@ -296,8 +296,8 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 폴더블8 �
                 rec["예약당일"], rec["예약누적"],
                 rec["예약누적"] / rec["목표"] if rec["목표"] else None,
                 rec["증분"],
-                rec["울트라당일"], rec["울트라누적"], rec["와이드당일"], rec["와이드누적"],
-                rec["플립8당일"], rec["플립8누적"], rec["모두의행복"], rec["소규모법인"]]
+                rec["18P당일"], rec["18P누적"], rec["18PM당일"], rec["18PM누적"],
+                rec["MNP"], rec["모두의행복"]]
         vals += [rec[k] for k in QUAL_KEYS]
         status = "제출"
         if rec.get("이월"):
@@ -313,28 +313,28 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 폴더블8 �
                    bold=kind != "store", fill=fill, fmt=fmt, color=color)
         r += 1
     ws2.freeze_panes = "D2"
- 
+
     # ---------- 개인별 시트 ----------
     ws3 = wb.create_sheet("개인별")
     ws3.sheet_view.showGridLines = False
     P_QUAL = QUAL_KEYS
     cols3 = ["순위", "상권", "매장", "이름", "목표", "실적", "달성률",
-             "모두의\n행복", "소규모\n/법인"]
+             "MNP", "모두의\n행복"]
     for k in P_QUAL:
-        cols3 += [(k if k != "삼디초" else "삼/디초"), "유치율"]
+        cols3 += [(k if k != "삼디가전" else "삼/디/가전"), "유치율"]
     for i, h in enumerate(cols3):
         _style(ws3, f"{get_column_letter(2 + i)}1", h, bold=True, fill="D9D9D9")
-    widths3 = [5.5, 9, 12, 9, 6.5, 6.5, 8, 7, 7] + [6, 7] * 8
+    widths3 = [5.5, 9, 12, 9, 6.5, 6.5, 8, 7, 7] + [6, 7] * 6
     for i, w in enumerate(widths3):
         ws3.column_dimensions[get_column_letter(2 + i)].width = w
- 
+
     def write_person(r, p, kind):
         g = p["실적"]
         name = p["이름"] + ("＊" if p.get("이월") else "")
         vals = [p.get("순위"), p.get("상권", ""), p.get("조직", ""), name,
                 p["목표"], p["실적"],
                 p["실적"] / p["목표"] if p["목표"] else None,
-                p["모행"], p["특판"]]
+                p["MNP"], p["모행"]]
         for k in P_QUAL:
             vals += [p[k], p[k] / g if g else None]
         hl = {}
@@ -360,7 +360,7 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 폴더블8 �
                 fill, color = HL_FILL[hl[i]], HL_FONT[hl[i]]
             _style(ws3, f"{get_column_letter(2 + i)}{r}", v,
                    bold=kind == "total", fill=fill, fmt=fmt, color=color)
- 
+
     if agg.get("개인"):
         r = 2
         write_person(r, agg["개인지사계"], "total"); r += 1
@@ -374,7 +374,6 @@ def build_workbook(agg, date_str, out_path, title="■ 강동소매 폴더블8 �
             ws3[f"B{r + 1}"].alignment = Alignment(horizontal="left")
             ws3[f"B{r + 1}"].border = Border()
         ws3.freeze_panes = "B2"
- 
+
     wb.save(out_path)
     return out_path
- 
