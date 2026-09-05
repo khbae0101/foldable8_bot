@@ -259,7 +259,7 @@ def main(mode="report"):
                 pcap += f"\n※ 개인별 미제출: {', '.join(pm)}"
         send_photo(os.environ["ANNOUNCE_CHAT_ID"], pth, pcap)
 
-    insight, closing, ins_err = insight_mod.generate(
+    insight, checkpoint, closing, ins_err = insight_mod.generate(
         agg, stores_cfg, date_str, DATA, now)
     if ins_err:
         print("시사점 생략:", ins_err)
@@ -267,6 +267,11 @@ def main(mode="report"):
         requests.post(f"{API}/sendMessage",
                       data={"chat_id": os.environ["ANNOUNCE_CHAT_ID"],
                             "text": insight}, timeout=(15, 60))
+    # 체크포인트 — 시사점 다음, 별도 메시지 (API 키 없어도 발송)
+    if checkpoint:
+        requests.post(f"{API}/sendMessage",
+                      data={"chat_id": os.environ["ANNOUNCE_CHAT_ID"],
+                            "text": checkpoint}, timeout=(15, 60))
     # 마무리 독려 멘트는 텔레그램에서 맨 마지막에 발송(토요일 주간 리포트 뒤).
     # 아래 주간 리포트 블록 이후로 미룸.
 
@@ -274,6 +279,8 @@ def main(mode="report"):
     body = cap
     if insight:
         body += "\n\n" + insight
+    if checkpoint:
+        body += "\n\n" + checkpoint
     if closing:
         body += "\n\n─────────────\n" + closing
     body += "\n\n상세 내역은 첨부 엑셀(raw 시트에 CRM 현황 포함) 참고 바랍니다."
