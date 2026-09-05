@@ -204,7 +204,7 @@ def main(mode="report"):
     if mode == "remind":
         txt = (f"📢 {stores_cfg['모델명']} 예약현황 취합 안내\n\n"
                f"금일 예약현황을 20시까지 보고 양식으로 올려주시기 바랍니다.\n"
-               f"20시 10분에 자동 마감 집계되며, 미제출 매장은 전일 보고값으로 이월됩니다.")
+               f"20시 15분에 자동 마감 집계되며, 미제출 매장은 전일 보고값으로 이월됩니다.")
         requests.post(f"{API}/sendMessage",
                       data={"chat_id": os.environ["REPORT_CHAT_ID"], "text": txt})
         # 전일(직전 영업일) 보고의 검증오류를 분류해 별도 메시지로 안내
