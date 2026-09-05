@@ -114,7 +114,10 @@ def render(rows, title, date_str, out_path, footnote=None, scale=2,
         fg = "white" if typ == "total" else (0, 0, 0)
         font = f_cellb if typ in ("total", "region") else f_cell
 
-        vals = r["cells"]  # COLS 순서와 동일한 리스트
+        vals = list(r["cells"])  # COLS 순서와 동일한 리스트
+        # 길이 불일치 방어 (컬럼 구성 변경 시 IndexError 방지)
+        if len(vals) != len(cols):
+            vals = (vals + [""] * len(cols))[:len(cols)]
         hl = r.get("hl", {})
         for k, v in enumerate(vals):
             cx = (xs[k] + xs[k + 1]) // 2
@@ -196,7 +199,9 @@ def build_rows(agg):
     for s in agg["매장_정렬"]:
         if s.get("데이터있음"):
             continue
-        c = [s["상권"], s["코드"], s["조직"], f"{s['목표']:,}", "미제출"] + [""] * 25
+        head = [s["상권"], s["코드"], s["조직"], f"{s['목표']:,}", "미제출"]
+        # 컬럼 수 변경(모델 3종→2종 등)에 따라 자동으로 빈칸 채움
+        c = head + [""] * (len(COLS) - len(head))
         rows.append({"type": "store_missing", "cells": c})
     return rows
 
