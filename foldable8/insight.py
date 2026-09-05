@@ -8,7 +8,7 @@
 """
 import json
 import os
-from datetime import timedelta
+from datetime import date, timedelta
 from pathlib import Path
 
 import requests
@@ -253,17 +253,51 @@ def build_prompt(facts, date_str, model_name, prev_insight):
             "- 숫자는 데이터에 있는 것만 사용, 추측·과장 금지, 존댓말.")
 
 
-def generate(agg, stores_cfg, date_str, data_dir, now):
-    """시사점 텍스트 생성 + 스냅샷/멘트 저장. 실패 시 (None, 이유)."""
-    key = os.environ.get("ANTHROPIC_API_KEY")
-    if not key:
-        return None, None, "API 키 없음"
+def _remain_days(now, cfg):
+    """캠페인 종료일까지 잔여 영업일 (일요일 제외)."""
+    try:
+        end = date.fromisoformat(cfg["캠페인"]["종료"])
+    except Exception:
+        return 1
+    n, d = 0, now.date()
+    while d < end:
+        d += timedelta(days=1)
+        if d.weekday() != 6:
+            n += 1
+    return max(n, 1)
+
+
+def generate(agg, stores_cfg, date_str, data_dir, now, remain=None):
+    """시사점 + 체크포인트 + 마무리 멘트 생성.
+
+    반환 (insight, checkpoint, closing, err)
+    · 체크포인트는 규칙 기반이라 API 키가 없어도 항상 생성된다.
+    · 시사점만 API 키가 필요하며, 실패 시 insight=None + err 사유.
+    """
     data_dir = Path(data_dir)
     prev = load_prev(data_dir, now, "snapshot")
     prev_insight = (load_prev(data_dir, now, "insight") or {}).get("text")
 
     snap = make_snapshot(agg, now, stores_cfg)
     facts = compute_facts(agg, snap, prev)
+    closing = closing_message(now)
+
+    # ── 체크포인트 (규칙 기반, 항상 생성) ──
+    try:
+        rd = remain if remain is not None else _remain_days(now, stores_cfg)
+        checkpoint = build_checkpoint(agg, snap, rd, date_str)
+    except Exception as e:
+        checkpoint = None
+        print("체크포인트 생성 실패:", e)
+
+    ymd = now.strftime("%Y%m%d")
+    (data_dir / f"snapshot_{ymd}.json").write_text(
+        json.dumps(snap, ensure_ascii=False, indent=1), encoding="utf-8")
+
+    # ── 시사점 (Claude) ──
+    key = os.environ.get("ANTHROPIC_API_KEY")
+    if not key:
+        return None, checkpoint, closing, "API 키 없음"
     prompt = build_prompt(facts, date_str, stores_cfg["모델명"], prev_insight)
     try:
         r = requests.post(
@@ -276,17 +310,11 @@ def generate(agg, stores_cfg, date_str, data_dir, now):
         r.raise_for_status()
         text = "".join(b.get("text", "") for b in r.json()["content"]).strip()
     except Exception as e:
-        return None, None, f"API 호출 실패: {e}"
+        return None, checkpoint, closing, f"API 호출 실패: {e}"
 
-    closing = closing_message(now)
-    full = text + ("\n\n─────────────\n" + closing if closing else "")
-
-    ymd = now.strftime("%Y%m%d")
-    (data_dir / f"snapshot_{ymd}.json").write_text(
-        json.dumps(snap, ensure_ascii=False, indent=1), encoding="utf-8")
     (data_dir / f"insight_{ymd}.json").write_text(
         json.dumps({"text": text}, ensure_ascii=False, indent=1), encoding="utf-8")
-    return text, closing, None
+    return text, checkpoint, closing, None
 
 
 # ─────────────────────────── 체크포인트 ───────────────────────────
