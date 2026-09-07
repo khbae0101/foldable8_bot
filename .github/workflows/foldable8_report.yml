@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "report(20시 취합) 또는 remind(19시 리마인드)"
+        description: "remind(19시) / verify(5분 검증) / report(20:15 취합)"
         default: "report"
 
 jobs:
@@ -39,10 +39,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           MODE="${{ github.event.inputs.mode }}"
-          if [ -z "$MODE" ]; then
-            HOUR=$(TZ=Asia/Seoul date +%H)
-            if [ "$HOUR" -lt 20 ]; then MODE=remind; else MODE=report; fi
-          fi
+          if [ -z "$MODE" ]; then MODE=report; fi
           python foldable8/collect_and_send.py "$MODE"
 
       - name: 상태 파일 커밋 (offset, 보고/마감 데이터)
