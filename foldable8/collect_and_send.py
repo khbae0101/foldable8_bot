@@ -284,7 +284,9 @@ def main(mode="report"):
         # 19:30 / 20:00 정각 부근 → 미보고 매장 안내
         miss = [x["조직"] for x in stores_cfg["매장"] if x["조직"] not in reports]
         bad = [k for k, v in state.items() if not v.get("ok")]
-        if (now.hour, now.minute) in ((19, 30), (20, 0)):
+        # 미보고 안내 : 마감 30분 전 / 마감 시각
+        #  (verify 크론이 1·6·11…분에 돌므로 31분·01분에 맞춘다)
+        if (now.hour, now.minute) in ((19, 31), (20, 1)):
             if miss or bad:
                 lines = [f"⏰ {'마감 30분 전' if now.hour == 19 else '마감 시각'}"
                          f" — 현재 미보고 {len(miss)}개점"]
