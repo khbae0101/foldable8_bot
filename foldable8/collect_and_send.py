@@ -289,6 +289,17 @@ def main(mode="report"):
     send_mail(f"[{stores_cfg['지사명']}] {stores_cfg['모델명']} 예약현황 ({now.month}/{now.day})",
               body, [out_xlsx], inline_images=mail_imgs)
 
+    # ── 리포트 PPT (별도 메일) ─────────────────────────────
+    #  지사·상권 : 매일   /   매장별 : 화·목·토
+    try:
+        import report_ppt
+        ppt_path, n_pages, is_full = report_ppt.build(now, data_dir=DATA)
+        psubj, pbody = report_ppt.mail_body(now, is_full, data_dir=DATA)
+        send_mail(psubj, pbody, [ppt_path])
+        print(f"리포트 PPT 발송 완료 ({'전체' if is_full else '요약'} {n_pages}장)")
+    except Exception as e:
+        print("리포트 PPT 생략:", e)
+
     # 토요일: 주간 리포트 (텔레그램 2장 + 별도 메일)
     if now.weekday() == 5:
         try:
