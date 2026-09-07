@@ -32,7 +32,7 @@ DATA = BASE / "data"
 DATA.mkdir(exist_ok=True)
 sys.path.insert(0, str(BASE))
 
-from report_parser import load_stores, parse_all
+from report_parser import load_stores, parse_all, parse_one
 from build_excel import aggregate, build_workbook
 from render_image import render, build_rows, build_footnote, render_persons_split
 import insight as insight_mod
@@ -68,10 +68,15 @@ def load_latest(prefix, now, max_back=7):
     return {}
 
 
-def collect_messages(report_chat_id):
-    """getUpdates로 보고방 신규 메시지 수집 (offset 상태 유지)."""
+def collect_messages(report_chat_id, with_meta=False):
+    """getUpdates로 보고방 신규 메시지 수집 (offset 상태 유지).
+
+    with_meta=True 면 [(text, message_id, edited)] 형태로 반환한다.
+    메시지 수정 시 텔레그램은 edited_message 로 다시 내려주므로,
+    같은 message_id 의 최신 내용이 뒤에 오게 되어 자연스럽게 덮어써진다.
+    """
     state = load_json(DATA / "offset.json", {"offset": 0})
-    msgs, offset = [], state["offset"]
+    items, offset = [], state["offset"]
     while True:
         r = requests.get(f"{API}/getUpdates",
                          params={"offset": offset, "timeout": 0, "limit": 100},
@@ -80,14 +85,36 @@ def collect_messages(report_chat_id):
             break
         for u in r["result"]:
             offset = u["update_id"] + 1
+            edited = "edited_message" in u
             m = u.get("message") or u.get("edited_message")
             if m and str(m["chat"]["id"]) == str(report_chat_id) and m.get("text"):
-                msgs.append(m["text"])
+                items.append((m["text"], m["message_id"], edited))
         if len(r["result"]) < 100:
             break
     state["offset"] = offset
     save_json(DATA / "offset.json", state)
-    return msgs
+    return items if with_meta else [t for t, _, _ in items]
+
+
+def react(chat_id, message_id, emoji="👍"):
+    """메시지에 이모지 반응 (봇 관리자 권한 필요)."""
+    try:
+        requests.post(f"{API}/setMessageReaction",
+                      json={"chat_id": chat_id, "message_id": message_id,
+                            "reaction": [{"type": "emoji", "emoji": emoji}]},
+                      timeout=(10, 30))
+    except Exception as e:
+        print("리액션 실패:", e)
+
+
+def reply(chat_id, message_id, text):
+    """해당 메시지에 답글."""
+    try:
+        requests.post(f"{API}/sendMessage",
+                      data={"chat_id": chat_id, "text": text,
+                            "reply_to_message_id": message_id}, timeout=(10, 30))
+    except Exception as e:
+        print("답글 실패:", e)
 
 
 def send_photo(chat_id, path, caption="", retries=3):
@@ -213,6 +240,77 @@ def main(mode="report"):
             check = build_error_check(prev, now)
             requests.post(f"{API}/sendMessage",
                           data={"chat_id": os.environ["REPORT_CHAT_ID"], "text": check})
+        return
+
+    # ── 실시간 검증 모드 (19:00~20:10, 5분 간격) ──────────────
+    #  정상 → 👍 리액션 / 오류 → 답글 1회 (같은 오류 반복 안내 안 함)
+    #  마감 집계는 하지 않고 수집·검증만 수행한다.
+    if mode == "verify":
+        chat = os.environ["REPORT_CHAT_ID"]
+        items = collect_messages(chat, with_meta=True)
+        reports = load_json(DATA / f"reports_{ymd}.json", {})
+        state = load_json(DATA / f"verify_{ymd}.json", {})
+        for text, mid, edited in items:
+            rec, err = parse_one(text, stores_cfg)
+            if rec is None:
+                if err:      # 보고 형식인데 매장명 인식 실패
+                    reply(chat, mid, f"❓ 매장명을 확인하지 못했습니다.\n{err}\n"
+                                     f"보고 제목에 매장명을 정확히 기재해 주세요.")
+                continue
+            org = rec["조직"]
+            errs = rec.get("검증오류") or []
+            reports[org] = rec
+            st = state.get(org, {"tries": 0, "last": None})
+            sig = " / ".join(errs)
+            if not errs:
+                react(chat, mid)                      # 정상 → 👍
+                state[org] = {"tries": st["tries"], "last": "", "ok": True}
+                continue
+            # 오류 : 같은 내용이면 재안내하지 않음, 3회차부터는 안내 중단
+            if sig != st["last"] and st["tries"] < 3:
+                n = st["tries"] + 1
+                head = f"⚠ {org}점 입력 확인 요청" + (f" ({n}회차)" if n > 1 else "")
+                body = "\n".join(f"· {e}" for e in errs[:4])
+                tail = ("\n\n확인 후 메시지를 수정하거나 다시 올려주시면 반영됩니다."
+                        if n < 3 else "\n\n반복 확인 요청입니다. 지사로 연락 주세요.")
+                reply(chat, mid, f"{head}\n{body}{tail}")
+                st["tries"] = n
+            st["last"] = sig
+            st["ok"] = False
+            state[org] = st
+        save_json(DATA / f"reports_{ymd}.json", reports)
+        save_json(DATA / f"verify_{ymd}.json", state)
+
+        # 19:30 / 20:00 정각 부근 → 미보고 매장 안내
+        miss = [x["조직"] for x in stores_cfg["매장"] if x["조직"] not in reports]
+        bad = [k for k, v in state.items() if not v.get("ok")]
+        if (now.hour, now.minute) in ((19, 30), (20, 0)):
+            if miss or bad:
+                lines = [f"⏰ {'마감 30분 전' if now.hour == 19 else '마감 시각'}"
+                         f" — 현재 미보고 {len(miss)}개점"]
+                if miss:
+                    by = {}
+                    for n2 in miss:
+                        g = next(x["상권"] for x in stores_cfg["매장"]
+                                 if x["조직"] == n2)
+                        by.setdefault(g, []).append(n2)
+                    lines.append("")
+                    for g in ("광진/구리", "경기북부", "강원"):
+                        if by.get(g):
+                            lines.append(f"[{g}] " + ", ".join(by[g]))
+                if bad:
+                    lines += ["", f"※ 수정 필요 {len(bad)}개점: " + ", ".join(bad)]
+                if now.hour == 20:
+                    lines += ["", "20시 15분 마감 집계됩니다. "
+                              "미보고 매장은 전일값으로 이월됩니다."]
+                requests.post(f"{API}/sendMessage",
+                              data={"chat_id": chat, "text": "\n".join(lines)})
+            else:
+                requests.post(f"{API}/sendMessage",
+                              data={"chat_id": chat,
+                                    "text": "✅ 전 매장 보고 완료 — 검증 이상 없습니다."})
+        print(f"verify: 수집 {len(items)}건 / 보고 {len(reports)}개점 / "
+              f"미보고 {len(miss)} / 수정필요 {len(bad)}")
         return
 
     # 1) 수집 + 파싱 (당일 기존 수집분과 병합 → 하루 여러 번 실행해도 안전)
