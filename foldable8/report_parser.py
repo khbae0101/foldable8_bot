@@ -239,3 +239,17 @@ def parse_all(messages, stores_cfg):
         else:
             reports[r["조직"]] = r
     return reports, errors
+
+
+def parse_one(text, stores_cfg):
+    """단일 메시지 파싱 → (보고dict, 오류사유).
+
+    · 보고 형식이 아니면 (None, None)
+    · 매장명 인식 실패 시 (None, 사유)
+    """
+    r = parse_report(text, stores_cfg)
+    if r is None:
+        return None, None
+    if "error" in r:
+        return None, r["error"]
+    return r, None
