@@ -37,11 +37,25 @@ def load(data_dir=None, cfg_path=None):
     cfg = json.loads(Path(cfg_path or BASE / "stores.json").read_text(encoding="utf-8"))
     tgt = {s["조직"]: s["목표"] for s in cfg["매장"]}
     reg = {s["조직"]: s["상권"] for s in cfg["매장"]}
-    series = {f.stem.split("_")[1]: json.loads(f.read_text(encoding="utf-8"))
-              for f in sorted(d.glob("close_*.json"))}
-    reports = {f.stem.split("_")[1]: json.loads(f.read_text(encoding="utf-8"))
-               for f in sorted(d.glob("reports_*.json"))}
-    return tgt, reg, series, reports, cfg
+    # 캠페인 기간(stores.json) 밖의 파일은 제외한다.
+    #  · 이전 캠페인(폴더블8 등) 데이터가 같은 폴더에 남아 있어도 안전하고,
+    #  · 빈/깨진 파일은 건너뛴다.
+    st = cfg["캠페인"]["시작"].replace("-", "")
+    en = cfg["캠페인"]["종료"].replace("-", "")
+
+    def _read(pattern):
+        out = {}
+        for f in sorted(d.glob(pattern)):
+            ymd = f.stem.split("_")[-1]
+            if not (ymd.isdigit() and st <= ymd <= en):
+                continue
+            try:
+                out[ymd] = json.loads(f.read_text(encoding="utf-8"))
+            except Exception as e:
+                print(f"데이터 파일 건너뜀 ({f.name}): {e}")
+        return out
+
+    return tgt, reg, _read("close_*.json"), _read("reports_*.json"), cfg
 
 
 def remain_days(now, cfg):
@@ -265,7 +279,15 @@ def summary3(d, y, good, bad, task, bottom=H - 22):
 def _ctx(now, data_dir, cfg_path):
     tgt, reg, series, reports, cfg = load(data_dir, cfg_path)
     ymd = now.strftime("%Y%m%d")
-    cur = reports.get(ymd) or reports[max(reports)]
+    cur = dict(reports.get(ymd) or reports[max(reports)])
+    # 미보고 매장도 0건으로 채워 넣는다.
+    #  (빠지면 매장 페이지가 누락되고 목표 합계까지 줄어든다)
+    zero = {"예약누적": 0, "예약당일": 0, "증분": 0, "18P누적": 0, "18PM누적": 0,
+            "MNP": 0, "모두의행복": 0, "개인별": [], "미보고": True}
+    zero.update({k: 0 for _, k in LINKS})
+    for s in cfg["매장"]:
+        if s["조직"] not in cur:
+            cur[s["조직"]] = {**zero, "조직": s["조직"]}
     days = sorted(series)
     labels = [f"{int(k[4:6])}/{int(k[6:])}" for k in days]
     dtot = sum(x["예약누적"] for x in cur.values())
