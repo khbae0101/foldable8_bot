@@ -78,5 +78,25 @@
   "tries": 0,
   "last": "",
   "ok": true
+ },
+ "진접": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "건대입구역": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "후평": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "수유": {
+  "tries": 2,
+  "last": "",
+  "ok": true
  }
 }
