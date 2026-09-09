@@ -113,5 +113,10 @@
   "tries": 1,
   "last": "",
   "ok": true
+ },
+ "홍천중앙": {
+  "tries": 0,
+  "last": "",
+  "ok": true
  }
 }
