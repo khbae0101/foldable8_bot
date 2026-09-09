@@ -128,5 +128,10 @@
   "tries": 1,
   "last": "",
   "ok": true
+ },
+ "지행역": {
+  "tries": 0,
+  "last": "",
+  "ok": true
  }
 }
