@@ -58,5 +58,30 @@
   "tries": 0,
   "last": "",
   "ok": true
+ },
+ "홍천중앙": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "온의": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "수유": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "다산신도시": {
+  "tries": 1,
+  "last": "개인 삼디가전 합(4) ≠ 매장 삼디가전(8)",
+  "ok": false
+ },
+ "상계역": {
+  "tries": 0,
+  "last": "",
+  "ok": true
  }
 }
