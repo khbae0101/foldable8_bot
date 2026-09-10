@@ -76,10 +76,15 @@
  },
  "다산신도시": {
   "tries": 1,
-  "last": "개인 삼디가전 합(4) ≠ 매장 삼디가전(8)",
-  "ok": false
+  "last": "",
+  "ok": true
  },
  "상계역": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "지행역": {
   "tries": 0,
   "last": "",
   "ok": true
