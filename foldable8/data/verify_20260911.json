@@ -10,8 +10,8 @@
   "ok": true
  },
  "구리리맥스": {
-  "tries": 1,
-  "last": "개인 MNP 합(2) ≠ 매장 MNP(1)",
+  "tries": 3,
+  "last": "개인 실적 합(7) ≠ 매장 예약누적(8)",
   "ok": false
  },
  "강릉임당": {
@@ -25,6 +25,26 @@
   "ok": false
  },
  "온의": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "외대역": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "수유": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "중계아울렛": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "원주무실": {
   "tries": 0,
   "last": "",
   "ok": true
