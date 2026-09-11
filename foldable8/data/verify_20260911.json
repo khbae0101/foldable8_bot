@@ -50,9 +50,9 @@
   "ok": true
  },
  "진접": {
-  "tries": 1,
-  "last": "개인 2nd 합(5) ≠ 매장 2nd(4) / 개인 라이프 합(4) ≠ 매장 라이프(2)",
-  "ok": false
+  "tries": 2,
+  "last": "",
+  "ok": true
  },
  "의정부로데오": {
   "tries": 0,
@@ -63,5 +63,30 @@
   "tries": 0,
   "last": "",
   "ok": true
+ },
+ "상봉역": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "다산신도시": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "양주덕계": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "면목역": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "자양번영로": {
+  "tries": 1,
+  "last": "모델별 합(3) ≠ 예약누적(4)",
+  "ok": false
  }
 }
