@@ -11,8 +11,8 @@
  },
  "구리리맥스": {
   "tries": 3,
-  "last": "개인 실적 합(7) ≠ 매장 예약누적(8)",
-  "ok": false
+  "last": "",
+  "ok": true
  },
  "강릉임당": {
   "tries": 0,
@@ -21,8 +21,8 @@
  },
  "상계역": {
   "tries": 1,
-  "last": "개인 MNP 합(2) ≠ 매장 MNP(1)",
-  "ok": false
+  "last": "",
+  "ok": true
  },
  "온의": {
   "tries": 0,
@@ -45,6 +45,21 @@
   "ok": true
  },
  "원주무실": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "진접": {
+  "tries": 1,
+  "last": "개인 2nd 합(5) ≠ 매장 2nd(4) / 개인 라이프 합(4) ≠ 매장 라이프(2)",
+  "ok": false
+ },
+ "의정부로데오": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "홍천중앙": {
   "tries": 0,
   "last": "",
   "ok": true
