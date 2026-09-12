@@ -11,8 +11,8 @@
  },
  "양주덕계": {
   "tries": 3,
-  "last": "개인 제휴카드 합(1) ≠ 매장 제휴카드(2)",
-  "ok": false
+  "last": "",
+  "ok": true
  },
  "중계아울렛": {
   "tries": 0,
@@ -105,6 +105,16 @@
   "ok": true
  },
  "옥정신도시": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "수유": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "자양번영로": {
   "tries": 0,
   "last": "",
   "ok": true
