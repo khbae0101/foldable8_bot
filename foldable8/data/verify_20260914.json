@@ -78,5 +78,20 @@
   "tries": 0,
   "last": "",
   "ok": true
+ },
+ "의정부로데오": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "후평": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "외대역": {
+  "tries": 1,
+  "last": "개인 120K 합(6) ≠ 매장 120K(7)",
+  "ok": false
  }
 }
