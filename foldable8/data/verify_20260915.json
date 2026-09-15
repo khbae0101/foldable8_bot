@@ -3,5 +3,40 @@
   "tries": 1,
   "last": "",
   "ok": true
+ },
+ "강릉유천": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "강릉임당": {
+  "tries": 1,
+  "last": "모델별 합(7) ≠ 예약누적(6) / 개인 실적 합(7) ≠ 매장 예약누적(6)",
+  "ok": false
+ },
+ "다산신도시": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "삼양로": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "의정부로데오": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "중계아울렛": {
+  "tries": 0,
+  "last": "",
+  "ok": true
+ },
+ "단구": {
+  "tries": 0,
+  "last": "",
+  "ok": true
  }
 }
