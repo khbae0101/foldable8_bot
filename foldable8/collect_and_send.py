@@ -246,6 +246,11 @@ def main(mode="report"):
     #  정상 → 👍 리액션 / 오류 → 답글 1회 (같은 오류 반복 안내 안 함)
     #  마감 집계는 하지 않고 수집·검증만 수행한다.
     if mode == "verify":
+        # 마감(20:15) 이후엔 수집·저장하지 않는다.
+        #  → 마감 후 보고가 reports 파일에 들어가 close 와 어긋나는 것을 방지
+        if (now.hour, now.minute) >= (20, 15):
+            print("verify: 마감 이후 — 건너뜀")
+            return
         chat = os.environ["REPORT_CHAT_ID"]
         items = collect_messages(chat, with_meta=True)
         reports = load_json(DATA / f"reports_{ymd}.json", {})
@@ -401,7 +406,10 @@ def main(mode="report"):
         print("리포트 PPT 생략:", e)
 
     # 토요일: 주간 리포트 (텔레그램 2장 + 별도 메일)
-    if now.weekday() == 5:
+    #  ※ 아이폰18 캠페인은 13일 단기라 주간 리포트 미사용. 다음 장기 캠페인 때 다시 켜려면
+    #     WEEKLY_REPORT = True 로 바꾸고 weekly_report.py 를 해당 양식으로 포팅할 것.
+    WEEKLY_REPORT = False
+    if WEEKLY_REPORT and now.weekday() == 5:
         try:
             wp1, wp2, wcap, wsubj, wbody = weekly_report.generate(
                 agg, stores_cfg, DATA, now, BASE)
