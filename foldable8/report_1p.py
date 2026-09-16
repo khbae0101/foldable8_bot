@@ -136,12 +136,15 @@ def trend(d, x, y, w, h, labels, cums, rate, avg, show_avg=True):
     base = y + pt + gh
     for i in range(n):
         cx = x + pl + step * i
-        bh = int(gh * incs[i] / mx * 0.72)
-        d.rectangle([cx - bw // 2, base - bh, cx + bw // 2, base],
-                    fill=(160, 205, 225))
+        # 누적이 줄어든 날(예약 취소·보고 정정)은 막대를 그리지 않고 숫자만 붉게 표시
+        bh = max(int(gh * incs[i] / mx * 0.72), 0)
+        if bh > 0:
+            d.rectangle([cx - bw // 2, base - bh, cx + bw // 2, base],
+                        fill=(160, 205, 225))
         if incs[i]:
-            d.text((cx, base - bh - 16), str(incs[i]), font=F(FB, 12),
-                   fill=(70, 110, 140), anchor="ma")
+            d.text((cx, base - bh - 16), f"{incs[i]:+d}" if incs[i] < 0 else str(incs[i]),
+                   font=F(FB, 12), fill=RED if incs[i] < 0 else (70, 110, 140),
+                   anchor="ma")
         d.text((cx, base + 7), labels[i], font=F(FR, 12), fill=GRAY, anchor="ma")
     rmax = max(max(rate), max(avg) if show_avg else 0, 0.15) * 1.18
     ser_list = ([(avg, (180, 188, 200), 3)] if show_avg else []) + [(rate, TEAL, 4)]
@@ -280,6 +283,11 @@ def _ctx(now, data_dir, cfg_path):
     tgt, reg, series, reports, cfg = load(data_dir, cfg_path)
     ymd = now.strftime("%Y%m%d")
     cur = dict(reports.get(ymd) or reports[max(reports)])
+    # 증분 = 오늘 누적 − 직전 마감 누적 (reports 파일에는 '증분' 키가 없음)
+    prev_days = [k for k in sorted(series) if k < ymd]
+    prev_close = series[prev_days[-1]] if prev_days else {}
+    for n, v in cur.items():
+        v["증분"] = v["예약누적"] - prev_close.get(n, 0)
     # 미보고 매장도 0건으로 채워 넣는다.
     #  (빠지면 매장 페이지가 누락되고 목표 합계까지 줄어든다)
     zero = {"예약누적": 0, "예약당일": 0, "증분": 0, "18P누적": 0, "18PM누적": 0,
